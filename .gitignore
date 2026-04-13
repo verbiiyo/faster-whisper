@@ -13,3 +13,6 @@ venv/
 # Ignore IDE, Editor Files
 .idea/
 .vscode/
+
+# Local model conversion outputs
+xos_model_conversion_outputs/
