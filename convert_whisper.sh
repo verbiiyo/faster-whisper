@@ -61,7 +61,7 @@ fi
 
 MODEL_ID="openai/whisper-${MODEL_VARIANT}"
 OUT_DIR="${OUT_ROOT}/whisper-${MODEL_VARIANT}-ct2"
-ARCHIVE="${OUT_ROOT}/whisper-${MODEL_VARIANT}-ct2.tar.gz"
+ARCHIVE="${OUT_ROOT}/whisper-${MODEL_VARIANT}-ct2.zip"
 
 mkdir -p "${OUT_ROOT}"
 
@@ -112,12 +112,28 @@ for f in "${required[@]}"; do
   fi
 done
 
-echo "==> Creating tar archive ${ARCHIVE}"
-tar -czf "${ARCHIVE}" -C "${OUT_ROOT}" "whisper-${MODEL_VARIANT}-ct2"
+echo "==> Creating zip archive ${ARCHIVE}"
+OUT_ROOT="${OUT_ROOT}" OUT_DIR="${OUT_DIR}" ARCHIVE="${ARCHIVE}" python - <<'PY'
+from pathlib import Path
+import os
+import zipfile
+
+out_root = Path(os.environ["OUT_ROOT"])
+out_dir = Path(os.environ["OUT_DIR"])
+archive = Path(os.environ["ARCHIVE"])
+
+if archive.exists():
+  archive.unlink()
+
+with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+  for path in sorted(out_dir.rglob("*")):
+    if path.is_file():
+      zf.write(path, arcname=path.relative_to(out_root))
+PY
+
+echo "==> Removing extracted model directory ${OUT_DIR}"
+rm -rf "${OUT_DIR}"
 
 echo ""
-echo "Done! Files written to ${OUT_DIR}:"
-ls -lh "${OUT_DIR}"
-echo ""
-echo "Archive ready: ${ARCHIVE}"
+echo "Done! Archive ready: ${ARCHIVE}"
 ls -lh "${ARCHIVE}"
